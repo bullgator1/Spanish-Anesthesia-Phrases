@@ -121,6 +121,32 @@ const ALL=[]; SECTIONS.forEach((sec,si)=>itemsOf(sec).forEach(it=>ALL.push({en:i
 // shared-phrase icon map: same English in 2+ sections -> show all those icons
 const iconsByEn={};
 ALL.forEach(o=>{const a=iconsByEn[o.en]=iconsByEn[o.en]||[]; if(!a.includes(o.sec.icon))a.push(o.sec.icon);});
+const SYN=[
+ ["blood patch","pdph post-dural puncture headache parche de sangre"],
+ ["covering the spinal fluid","pdph dural puncture leak"],
+ ["headache","pdph cefalea"],
+ ["cesarean","c-section csection c section cesarea"],
+ ["epidural","neuraxial regional"],
+ ["spinal or epidural","neuraxial regional raquidea"],
+ ["nause","ponv nausea vomiting emesis n/v"],
+ ["vomit","ponv emesis n/v"],
+ ["blood pressure","bp hypotension hypertension"],
+ ["intravenous","iv line catheter"],
+ ["interpreter","translator translation"],
+ ["nerve block","regional peripheral block"],
+ ["numbness","dermatome level neuraxial"],
+ ["eat or drink","npo nothing by mouth fasting fasted"],
+ ["allerg","shellfish latex penicillin allergy reaction"],
+ ["oxygen","o2 preoxygenate mask"],
+ ["urinate","foley catheter bladder void pee"],
+ ["breathing tube","intubation ett extubate airway tube"],
+ ["medication","meds drugs prescriptions"],
+ ["pregnant","pregnancy lmp"],
+ ["smoke or drink","tobacco alcohol etoh"],
+ ["operating table","transfer move to bed"],
+ ["family","spouse partner relatives visitor"]
+];
+function synFor(en){const l=en.toLowerCase();let s="";for(const e of SYN){if(l.indexOf(e[0])>=0)s+=" "+e[1];}return s;}
 
 let esVoice=null;
 function pickVoice(){const vs=speechSynthesis.getVoices();
@@ -135,9 +161,9 @@ function speak(text,btn){if(!('speechSynthesis' in window))return;
   speechSynthesis.speak(u);}
 const gtLink=es=>'https://translate.google.com/?sl=es&tl=en&op=translate&text='+encodeURIComponent(es);
 
-function makeCard(o){const es=esOf([o.en,o.f,o.t]);const icons=(iconsByEn[o.en]||[o.sec.icon]).join('');
+function makeCard(o,sub){const es=esOf([o.en,o.f,o.t]);const icons=(iconsByEn[o.en]||[o.sec.icon]).join('');
   const card=document.createElement('div');card.className='card';card.style.borderLeftColor=o.sec.color;
-  card.dataset.en=o.en;card.dataset.search=(o.en+' '+o.f+' '+o.t).toLowerCase();
+  card.dataset.en=o.en;card.dataset.search=(o.en+' '+o.f+' '+o.t+' '+o.sec.name+' '+(sub||'')+' '+synFor(o.en)).toLowerCase();
   card.innerHTML='<span class="tag">'+icons+'</span><div class="txt"><div class="es"></div><div class="en"></div></div>'+
     '<button class="star" aria-label="Favorite">☆</button><a class="gt" target="_blank" rel="noopener" title="Google Translate">GT</a><button class="speak" aria-label="Speak">🔊</button>';
   card.querySelector('.es').textContent=es;card.querySelector('.en').textContent=o.en;card.querySelector('.gt').href=gtLink(es);
@@ -170,7 +196,7 @@ function buildAll(){main.innerHTML='';
   main.appendChild(commonSection);renderCommon();
   SECTIONS.forEach((sec,si)=>{const s=sectionEl(si,sec.icon,sec.name,sec.color);
     if(sec.groups){sec.groups.forEach(g=>{const h=document.createElement('div');h.className='subhead';h.style.borderLeftColor=sec.color;h.style.color=sec.color;h.textContent=g.sub;s.appendChild(h);
-      g.items.forEach(it=>s.appendChild(makeCard({en:it[0],f:it[1],t:it[2],common:!!it[3],sec,si})));});}
+      g.items.forEach(it=>s.appendChild(makeCard({en:it[0],f:it[1],t:it[2],common:!!it[3],sec,si},g.sub)));});}
     else{sec.items.forEach(it=>s.appendChild(makeCard({en:it[0],f:it[1],t:it[2],common:!!it[3],sec,si})));}
     main.appendChild(s);});
   main.appendChild(buildConsent());
@@ -205,16 +231,27 @@ document.getElementById('reg').addEventListener('click',e=>{const btn=e.target.c
     c.querySelector('.es').textContent=es;c.querySelector('.gt').href=gtLink(es);});});
 function initReg(){document.querySelectorAll('#reg button').forEach(b=>b.classList.toggle('on',b.dataset.r===reg));}
 
-const chips=document.getElementById('chips');let activeSec='all';
-function addChip(label,sec){const c=document.createElement('div');c.className='chip'+(sec==='all'?' active':'');c.textContent=label;c.dataset.sec=sec;
-  c.onclick=()=>{activeSec=sec;document.getElementById('search').value='';[...chips.children].forEach(x=>x.classList.toggle('active',x===c));if(sec==='common'||sec==='all')renderCommon();applyFilter();};chips.appendChild(c);}
-addChip('All','all');addChip('⭐ Favorites','fav');addChip('🔥 Common','common');
+const chips=document.getElementById('chips');let activeSec='common';let lastCat='common';
+const search=document.getElementById('search');
+function addChip(label,sec){const c=document.createElement('div');c.className='chip';c.textContent=label;c.dataset.sec=sec;
+  c.onclick=()=>{ if(sec==='all'){search.focus();return;} selectCat(sec); };chips.appendChild(c);return c;}
+function selectCat(sec){activeSec=sec;lastCat=sec;search.value='';searchChip.classList.add('hidden');
+  [...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec===sec));
+  if(sec==='common')renderCommon();applyFilter();}
+const searchChip=addChip('🔎 Search (All)','all');searchChip.classList.add('hidden');
+addChip('⭐ Favorites','fav');addChip('🔥 Common','common');
 SECTIONS.forEach((s,i)=>addChip(s.icon+' '+s.name.split(' ')[0],String(i)));
 addChip('📋 Consent','consent');
-const search=document.getElementById('search');
-search.addEventListener('input',()=>{if(search.value.trim()){activeSec='all';[...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec==='all'));}applyFilter();});
+search.addEventListener('input',()=>{const q=search.value.trim();
+  if(q){activeSec='all';searchChip.classList.remove('hidden');[...chips.children].forEach(x=>x.classList.toggle('active',x===searchChip));}
+  else{searchChip.classList.add('hidden');activeSec=lastCat;[...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec===lastCat));if(lastCat==='common')renderCommon();}
+  applyFilter();});
 function applyFilter(){const q=search.value.trim().toLowerCase();
-  document.querySelectorAll('.card').forEach(c=>c.classList.toggle('hidden',q&&!c.dataset.search.includes(q)));
+  document.querySelectorAll('.card').forEach(c=>{let hide=false;
+    if(q){const txt=c.dataset.search;
+      if(q.length>=4){hide=txt.indexOf(q)<0;}
+      else{const toks=txt.split(/[^a-z0-9áéíóúñü]+/);hide=!toks.some(t=>t&&t.indexOf(q)===0);}}
+    c.classList.toggle('hidden',hide);});
   document.querySelectorAll('.subhead').forEach(h=>h.classList.toggle('hidden',!!q));
   document.querySelectorAll('.section').forEach(s=>{const id=s.dataset.sec;let show=activeSec==='all'?true:id===activeSec;
     if(q)show=id!=='fav'&&id!=='common'&&id!=='consent';
@@ -231,7 +268,7 @@ function applyTheme(){document.documentElement.dataset.theme=theme;
   document.getElementById('theme').textContent=theme==='dark'?'◑':'◐';}
 document.getElementById('theme').addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';store.set('theme',theme);applyTheme();});
 
-applyTheme();initReg();buildAll();
+applyTheme();initReg();buildAll();selectCat('common');
 setTimeout(()=>{if(!('speechSynthesis' in window)){const w=document.createElement('div');w.className='voicewarn';
   w.textContent='This browser has no speech synthesis — use the GT button to hear phrases on Google Translate.';main.prepend(w);}},800);
 </script>
