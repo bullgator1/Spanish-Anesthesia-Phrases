@@ -65,9 +65,16 @@
   .seg button{border:none;background:transparent;padding:9px 13px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;}
   .seg button+button{border-left:1px solid var(--line);}
   .seg button.on{background:var(--teal);color:#fff;}
-  .chips{display:flex;flex-wrap:wrap;gap:7px;padding:9px 2px 4px;}
+  .catbar{position:fixed;left:0;right:0;top:0;display:none;gap:8px;padding:8px 12px;background:var(--bg);border-bottom:1px solid var(--line);z-index:19;align-items:center;box-shadow:0 6px 12px rgba(0,0,0,.10);}
+  .catbar.show{display:flex;}
+  .catbtn{padding:6px 12px;border-radius:999px;font-size:13px;white-space:nowrap;cursor:pointer;border:1px solid var(--line);display:inline-flex;align-items:center;gap:6px;font-family:inherit;}
+  .catactive{background:var(--teal);color:#fff;border-color:var(--teal);font-weight:600;}
+  .catall{background:var(--card);color:var(--teal-d);border-color:var(--teal-d);}
+  .catall .car{font-size:10px;}
+  .chips{display:flex;flex-wrap:wrap;gap:7px;padding:9px 12px 6px;}
   .chip{padding:6px 12px;border-radius:999px;border:1px solid var(--line);background:#fff;font-size:13px;color:var(--ink);white-space:nowrap;cursor:pointer;}
   .chip.active{background:var(--teal);color:#fff;border-color:var(--teal);}
+  html[data-theme="dark"] .chip.active{background:var(--teal);color:#fff;}
   .opts{display:flex;align-items:center;gap:8px;font-size:13px;color:var(--muted);padding:2px 2px 4px;}
   .toggle{margin-left:auto;display:flex;align-items:center;gap:6px;cursor:pointer;user-select:none;}
   .toggle input{width:38px;height:22px;appearance:none;background:#cdd6d7;border-radius:999px;position:relative;outline:none;cursor:pointer;transition:.2s;}
@@ -137,8 +144,12 @@
       <div class="seg" id="reg"><button data-r="formal" class="on">Usted</button><button data-r="informal">Tú</button></div>
     </div>
   </div>
-  <div class="chips" id="chips"></div>
 </div>
+<div class="catbar" id="catbar">
+  <button class="catbtn catactive" id="catActive">🔥 Common</button>
+  <button class="catbtn catall" id="catAll">All sections <span class="car">▾</span></button>
+</div>
+<div class="chips" id="chips"></div>
 
 <div id="settings" class="settings hidden">
   <label class="srow"><span>Voice</span> <select id="voice"></select></label>
@@ -371,6 +382,27 @@ function initDisp(){document.documentElement.dataset.disp=disp;document.querySel
 const chips=document.getElementById('chips');let activeSec='common';let lastCat='common';
 const search=document.getElementById('search');
 const crow1=document.querySelector('.crow1');
+const controls=document.querySelector('.controls');
+const catActive=document.getElementById('catActive'),catAll=document.getElementById('catAll');
+function catMeta(sec){
+  if(sec==='common')return{icon:'🔥',label:'Common'};
+  if(sec==='fav')return{icon:'⭐',label:'Favorites'};
+  if(sec==='consent')return{icon:'📋',label:'Consent'};
+  if(sec==='all')return{icon:'🔎',label:'Search'};
+  const s=SECTIONS[+sec];return s?{icon:s.icon,label:s.name.split(' ')[0]}:{icon:'🔥',label:'Common'};
+}
+function updateCatBar(){const m=catMeta(activeSec);catActive.textContent=m.icon+' '+m.label;}
+const catbar=document.getElementById('catbar');
+function syncCatbar(){
+  // Show the compact bar only once the full chip grid has scrolled up past the sticky search row.
+  const stickBottom=controls.getBoundingClientRect().bottom;
+  const gridBottom=chips.getBoundingClientRect().bottom;
+  catbar.classList.toggle('show', gridBottom <= stickBottom + 1);
+}
+function gotoSections(){window.scrollTo({top:0,behavior:'smooth'});}
+catAll.addEventListener('click',gotoSections);
+catActive.addEventListener('click',gotoSections);
+window.addEventListener('scroll',syncCatbar,{passive:true});
 function expandSearch(){crow1.classList.add('expand');}
 function collapseSearch(){if(!search.value.trim())crow1.classList.remove('expand');}
 function clearSearch(){search.value='';search.dispatchEvent(new Event('input'));search.blur();crow1.classList.remove('expand');}
@@ -385,7 +417,7 @@ function selectCat(sec){activeSec=sec;lastCat=sec;search.value='';searchChip.cla
   [...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec===sec));
   if(sec!=='all'&&collapsed[sec]){collapsed[sec]=false;store.set('collapsed',collapsed);
     const s=document.querySelector('.section[data-sec="'+sec+'"]');if(s)s.classList.remove('collapsed');}
-  if(sec==='common')renderCommon();applyFilter();}
+  if(sec==='common')renderCommon();updateCatBar();applyFilter();if(typeof syncCatbar==='function')syncCatbar();}
 const searchChip=addChip('🔎 Search (All)','all');searchChip.classList.add('hidden');
 addChip('⭐ Favorites','fav');addChip('🔥 Common','common');
 SECTIONS.forEach((s,i)=>addChip(s.icon+' '+s.name.split(' ')[0],String(i)));
@@ -393,7 +425,7 @@ addChip('📋 Consent','consent');
 search.addEventListener('input',()=>{const q=search.value.trim();
   if(q){activeSec='all';searchChip.classList.remove('hidden');[...chips.children].forEach(x=>x.classList.toggle('active',x===searchChip));}
   else{searchChip.classList.add('hidden');activeSec=lastCat;[...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec===lastCat));if(lastCat==='common')renderCommon();}
-  applyFilter();});
+  updateCatBar();applyFilter();});
 function applyFilter(){const q=search.value.trim().toLowerCase();
   document.documentElement.dataset.searching=q?'1':'0';
   document.querySelectorAll('.card').forEach(c=>{let hide=false;
@@ -420,6 +452,8 @@ document.getElementById('theme').addEventListener('click',()=>{theme=theme==='da
 applyTheme();initReg();initDisp();buildAll();
 const startValid=startSec==='common'||startSec==='fav'||startSec==='consent'||(SECTIONS[+startSec]!=null);
 selectCat(startValid?startSec:'common');
+function syncStickyTop(){const h=document.querySelector('header');if(!h)return;const hh=h.offsetHeight;controls.style.top=hh+'px';catbar.style.top=(hh+controls.offsetHeight)+'px';syncCatbar();}
+window.addEventListener('resize',syncStickyTop);syncStickyTop();setTimeout(syncStickyTop,400);
 // settings panel
 const gear=document.getElementById('gear'),settings=document.getElementById('settings');
 gear.addEventListener('click',()=>settings.classList.toggle('hidden'));
