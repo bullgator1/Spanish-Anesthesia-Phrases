@@ -45,8 +45,22 @@
   .obox .oclose{margin-top:10px;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:12px;padding:10px;font-size:14px;cursor:pointer;width:100%;}
   .controls{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 12px 6px;border-bottom:1px solid var(--line);}
   .crow1{display:flex;gap:8px;align-items:center;}
-  #search{flex:1;padding:11px 14px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none;color:var(--ink);}
+  .sbox{position:relative;flex:1 1 50%;min-width:0;display:flex;transition:flex-basis .2s ease;}
+  #search{flex:1 1 auto;min-width:0;padding:11px 40px 11px 14px;font-size:16px;border:1px solid var(--line);border-radius:12px;background:#fff;outline:none;color:var(--ink);}
   #search:focus{border-color:var(--teal);}
+  #search::-webkit-search-cancel-button{-webkit-appearance:none;appearance:none;display:none;}
+  .sclear{position:absolute;right:7px;top:50%;transform:translateY(-50%);width:28px;height:28px;border:none;background:transparent;color:var(--muted);font-size:17px;line-height:1;cursor:pointer;display:none;border-radius:50%;}
+  .sclear:active{background:var(--line);}
+  .segs{flex:1 1 50%;min-width:0;display:flex;gap:8px;overflow:hidden;transition:flex-basis .2s ease,opacity .18s ease;}
+  .segs .seg{flex:1 1 0;min-width:0;}
+  .segs #disp{flex-grow:8;}
+  .segs #reg{flex-grow:12;}
+  .segs .seg button{flex:1 1 auto;padding:9px 6px;white-space:nowrap;}
+  .searchcount{flex:0 0 auto;font-size:12px;color:var(--muted);white-space:nowrap;display:none;}
+  .crow1.expand .sbox{flex-basis:100%;}
+  .crow1.expand .sclear{display:grid;place-items:center;}
+  .crow1.expand .segs{flex-basis:0;opacity:0;pointer-events:none;}
+  .crow1.expand .searchcount{display:block;}
   .seg{display:flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;background:var(--card);flex:0 0 auto;}
   .seg button{border:none;background:transparent;padding:9px 13px;font-size:13px;font-weight:600;color:var(--muted);cursor:pointer;}
   .seg button+button{border-left:1px solid var(--line);}
@@ -62,7 +76,10 @@
   .toggle input:checked::after{left:18px;}
   main{padding:6px 12px 0;max-width:760px;margin:0 auto;}
   .section{margin-top:16px;}
-  .section h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;margin:0 2px 8px;display:flex;align-items:center;gap:8px;}
+  .section h2{font-size:14px;text-transform:uppercase;letter-spacing:.04em;margin:0 2px 8px;display:flex;align-items:center;gap:8px;cursor:pointer;user-select:none;}
+  .chev{margin-left:auto;font-size:12px;opacity:.5;transition:transform .15s;transform:rotate(90deg);}
+  .section.collapsed .chev{transform:rotate(0);}
+  html:not([data-searching="1"]) .section.collapsed > :not(h2){display:none !important;}
   .subhead{font-size:12.5px;font-weight:700;margin:14px 2px 7px;padding-left:9px;border-left:4px solid var(--line);letter-spacing:.02em;}
   .limsel{margin-left:auto;display:flex;gap:4px;}
   .limbtn{border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:11px;font-weight:700;min-width:26px;height:24px;border-radius:6px;cursor:pointer;}
@@ -71,9 +88,13 @@
   .card{background:var(--card);border:1px solid var(--line);border-left:5px solid var(--teal);border-radius:12px;padding:11px 12px;margin-bottom:9px;display:flex;align-items:center;gap:10px;cursor:pointer;transition:transform .05s;}
   .card:active{transform:scale(.99);}
   .tag{flex:0 0 auto;font-size:16px;text-align:center;white-space:nowrap;line-height:1;}
-  .card .txt{flex:1;min-width:0;}
-  .card .es{font-size:18px;font-weight:600;color:var(--ink);line-height:1.25;}
-  .card .en{font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.2;}
+  .card .txt{flex:1;min-width:0;display:flex;flex-direction:column;}
+  .card .es{order:1;font-size:18px;font-weight:600;color:var(--ink);line-height:1.25;}
+  .card .en{order:2;font-size:12.5px;color:var(--muted);margin-top:3px;line-height:1.2;}
+  .card .pron{order:3;}
+  /* English-on-top mode: swap which line is big/bold (speech stays Spanish) */
+  html[data-disp="en"] .card .en{order:1;font-size:18px;font-weight:600;color:var(--ink);margin-top:0;line-height:1.25;}
+  html[data-disp="en"] .card .es{order:2;font-size:12.5px;font-weight:400;color:var(--muted);margin-top:3px;line-height:1.2;}
   .star{flex:0 0 auto;width:34px;height:34px;border:none;background:transparent;font-size:20px;color:#c7ccce;cursor:pointer;line-height:1;}
   .star.on{color:var(--gold);}
   .gt{flex:0 0 auto;font-size:10px;color:var(--muted);text-decoration:none;border:1px solid var(--line);padding:4px 6px;border-radius:7px;}
@@ -106,11 +127,17 @@
 
 <div class="controls">
   <div class="crow1">
-    <input id="search" type="search" placeholder="Search English or Spanish…" autocomplete="off">
-    <div class="seg" id="reg"><button data-r="formal" class="on">Usted</button><button data-r="informal">Tú</button></div>
+    <div class="sbox" id="sbox">
+      <input id="search" type="search" placeholder="🔍 Search…" autocomplete="off">
+      <button id="searchClose" class="sclear" aria-label="Clear and close search">✕</button>
+    </div>
+    <span id="count" class="searchcount"></span>
+    <div class="segs" id="segs">
+      <div class="seg" id="disp"><button data-d="es" class="on">ES</button><button data-d="en">EN</button></div>
+      <div class="seg" id="reg"><button data-r="formal" class="on">Usted</button><button data-r="informal">Tú</button></div>
+    </div>
   </div>
   <div class="chips" id="chips"></div>
-  <div class="opts"><span id="count"></span></div>
 </div>
 
 <div id="settings" class="settings hidden">
@@ -118,6 +145,8 @@
   <label class="srow"><span>Speed</span> <input type="range" id="rate" min="0.6" max="1" step="0.05"></label>
   <label class="srow"><span>Patient view (tap a phrase to enlarge)</span> <input type="checkbox" id="patientView"></label>
   <label class="srow"><span>Pronunciation guide</span> <input type="checkbox" id="pron"></label>
+  <label class="srow"><span>Open app to</span> <select id="startSec"></select></label>
+  <label class="srow"><span>Common phrases shown</span> <select id="commonLimitSel"><option value="10">10</option><option value="15">15</option><option value="20">20</option></select></label>
 </div>
 
 <main id="main"></main>
@@ -140,7 +169,10 @@ document.getElementById('disc').textContent="This translation eCard was created 
 const store={get(k,d){try{const v=localStorage.getItem(k);return v==null?d:JSON.parse(v);}catch(e){return d;}},
              set(k,v){try{localStorage.setItem(k,JSON.stringify(v));}catch(e){}}};
 let reg=store.get('reg','formal'); let favs=store.get('favs',[]);
+let disp=store.get('disp','es'); document.documentElement.dataset.disp=disp;
+let collapsed=store.get('collapsed',{});
 let usage=store.get('usage',{}); let commonLimit=store.get('commonLimit',15);if([10,15,20].indexOf(commonLimit)<0)commonLimit=15;
+let startSec=store.get('startSec','common');
 let patientView=store.get('patientView',false);let showPron=store.get('showPron',false);let rate=store.get('rate',0.95);let voiceURI=store.get('voiceURI','');
 function bump(en){usage[en]=(usage[en]||0)+1;store.set('usage',usage);}
 const esOf=it=>reg==='informal'?it[2]:it[1];
@@ -275,7 +307,12 @@ function makeCard(o,sub){const es=esOf([o.en,o.f,o.t]);const icons=(iconsByEn[o.
 
 const main=document.getElementById('main');
 function sectionEl(id,icon,title,color){const s=document.createElement('section');s.className='section';s.dataset.sec=String(id);
-  s.innerHTML='<h2 style="color:'+color+'"><span>'+icon+'</span>'+title+'</h2>';return s;}
+  s.innerHTML='<h2 style="color:'+color+'"><span>'+icon+'</span>'+title+'<span class="chev">▸</span></h2>';
+  if(collapsed[String(id)])s.classList.add('collapsed');
+  s.querySelector('h2').addEventListener('click',e=>{if(e.target.closest('.limsel'))return;toggleCollapse(String(id));});
+  return s;}
+function toggleCollapse(id){collapsed[id]=!collapsed[id];store.set('collapsed',collapsed);
+  const s=document.querySelector('.section[data-sec="'+id+'"]');if(s)s.classList.toggle('collapsed',!!collapsed[id]);}
 function buildConsent(){const s=sectionEl('consent','📋','Consent — risks, benefits & alternatives','#5a6b6d');
   const box=document.createElement('div');box.className='consentbox';
   CONSENT.forEach(c=>{const d=document.createElement('div');d.className='ctype';d.innerHTML='<h3>'+c.type+'</h3>';
@@ -289,10 +326,6 @@ let favSection,commonSection;
 function buildAll(){main.innerHTML='';
   favSection=sectionEl('fav','⭐','Favorites','#caa000');renderFav(favSection);main.appendChild(favSection);
   commonSection=sectionEl('common','🔥','Common','#caa000');
-  const lim=document.createElement('span');lim.className='limsel';
-  [10,15,20].forEach(n=>{const x=document.createElement('button');x.className='limbtn'+(n===commonLimit?' on':'');x.dataset.n=n;x.textContent=n;
-    x.onclick=ev=>{ev.stopPropagation();commonLimit=n;store.set('commonLimit',n);[...lim.children].forEach(c=>c.classList.toggle('on',+c.dataset.n===commonLimit));renderCommon();};lim.appendChild(x);});
-  commonSection.querySelector('h2').appendChild(lim);
   main.appendChild(commonSection);renderCommon();
   SECTIONS.forEach((sec,si)=>{const s=sectionEl(si,sec.icon,sec.name,sec.color);
     if(sec.groups){sec.groups.forEach(g=>{const h=document.createElement('div');h.className='subhead';h.style.borderLeftColor=sec.color;h.style.color=sec.color;h.textContent=g.sub;s.appendChild(h);
@@ -330,13 +363,28 @@ document.getElementById('reg').addEventListener('click',e=>{const btn=e.target.c
   document.querySelectorAll('.card').forEach(c=>{const o=ALL.find(x=>x.en===c.dataset.en);if(!o)return;const es=esOf([o.en,o.f,o.t]);
     c.querySelector('.es').textContent=es;const pr=c.querySelector('.pron');if(pr)pr.textContent=pron(es);c.querySelector('.gt').href=gtLink(es);});});
 function initReg(){document.querySelectorAll('#reg button').forEach(b=>b.classList.toggle('on',b.dataset.r===reg));}
+document.getElementById('disp').addEventListener('click',e=>{const btn=e.target.closest('button');if(!btn)return;
+  disp=btn.dataset.d;store.set('disp',disp);document.documentElement.dataset.disp=disp;
+  document.querySelectorAll('#disp button').forEach(b=>b.classList.toggle('on',b===btn));});
+function initDisp(){document.documentElement.dataset.disp=disp;document.querySelectorAll('#disp button').forEach(b=>b.classList.toggle('on',b.dataset.d===disp));}
 
 const chips=document.getElementById('chips');let activeSec='common';let lastCat='common';
 const search=document.getElementById('search');
+const crow1=document.querySelector('.crow1');
+function expandSearch(){crow1.classList.add('expand');}
+function collapseSearch(){if(!search.value.trim())crow1.classList.remove('expand');}
+function clearSearch(){search.value='';search.dispatchEvent(new Event('input'));search.blur();crow1.classList.remove('expand');}
+search.addEventListener('focus',expandSearch);
+search.addEventListener('blur',collapseSearch);
+document.getElementById('searchClose').addEventListener('mousedown',e=>e.preventDefault());
+document.getElementById('searchClose').addEventListener('click',clearSearch);
+search.addEventListener('keydown',e=>{if(e.key==='Escape')clearSearch();});
 function addChip(label,sec){const c=document.createElement('div');c.className='chip';c.textContent=label;c.dataset.sec=sec;
   c.onclick=()=>{ if(sec==='all'){search.focus();return;} selectCat(sec); };chips.appendChild(c);return c;}
-function selectCat(sec){activeSec=sec;lastCat=sec;search.value='';searchChip.classList.add('hidden');
+function selectCat(sec){activeSec=sec;lastCat=sec;search.value='';searchChip.classList.add('hidden');crow1.classList.remove('expand');
   [...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec===sec));
+  if(sec!=='all'&&collapsed[sec]){collapsed[sec]=false;store.set('collapsed',collapsed);
+    const s=document.querySelector('.section[data-sec="'+sec+'"]');if(s)s.classList.remove('collapsed');}
   if(sec==='common')renderCommon();applyFilter();}
 const searchChip=addChip('🔎 Search (All)','all');searchChip.classList.add('hidden');
 addChip('⭐ Favorites','fav');addChip('🔥 Common','common');
@@ -347,6 +395,7 @@ search.addEventListener('input',()=>{const q=search.value.trim();
   else{searchChip.classList.add('hidden');activeSec=lastCat;[...chips.children].forEach(x=>x.classList.toggle('active',x.dataset.sec===lastCat));if(lastCat==='common')renderCommon();}
   applyFilter();});
 function applyFilter(){const q=search.value.trim().toLowerCase();
+  document.documentElement.dataset.searching=q?'1':'0';
   document.querySelectorAll('.card').forEach(c=>{let hide=false;
     if(q){const txt=c.dataset.search;
       if(q.length>=4){hide=txt.indexOf(q)<0;}
@@ -368,7 +417,9 @@ function applyTheme(){document.documentElement.dataset.theme=theme;
   document.getElementById('theme').textContent=theme==='dark'?'◑':'◐';}
 document.getElementById('theme').addEventListener('click',()=>{theme=theme==='dark'?'light':'dark';store.set('theme',theme);applyTheme();});
 
-applyTheme();initReg();buildAll();selectCat('common');
+applyTheme();initReg();initDisp();buildAll();
+const startValid=startSec==='common'||startSec==='fav'||startSec==='consent'||(SECTIONS[+startSec]!=null);
+selectCat(startValid?startSec:'common');
 // settings panel
 const gear=document.getElementById('gear'),settings=document.getElementById('settings');
 gear.addEventListener('click',()=>settings.classList.toggle('hidden'));
@@ -376,6 +427,14 @@ const rateEl=document.getElementById('rate');rateEl.value=rate;rateEl.addEventLi
 const voiceEl=document.getElementById('voice');voiceEl.addEventListener('change',()=>{voiceURI=voiceEl.value;store.set('voiceURI',voiceURI);});
 const pvEl=document.getElementById('patientView');pvEl.checked=patientView;pvEl.addEventListener('change',()=>{patientView=pvEl.checked;store.set('patientView',patientView);});
 const prEl=document.getElementById('pron');prEl.checked=showPron;document.documentElement.dataset.pron=showPron?'1':'0';prEl.addEventListener('change',()=>{showPron=prEl.checked;store.set('showPron',showPron);document.documentElement.dataset.pron=showPron?'1':'0';});
+const startSel=document.getElementById('startSec');
+startSel.innerHTML='<option value="common">🔥 Common</option><option value="fav">⭐ Favorites</option>'+
+  SECTIONS.map((s,i)=>'<option value="'+i+'">'+s.icon+' '+s.name+'</option>').join('')+
+  '<option value="consent">📋 Consent</option>';
+startSel.value=startSec;
+startSel.addEventListener('change',()=>{startSec=startSel.value;store.set('startSec',startSec);});
+const climSel=document.getElementById('commonLimitSel');climSel.value=String(commonLimit);
+climSel.addEventListener('change',()=>{commonLimit=+climSel.value;store.set('commonLimit',commonLimit);renderCommon();});
 populateVoices();
 // patient-view overlay
 const overlay=document.getElementById('overlay');
