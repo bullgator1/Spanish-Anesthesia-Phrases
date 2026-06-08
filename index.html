@@ -53,6 +53,13 @@
   .respcard .rgo{flex:0 0 auto;font-size:13px;color:var(--teal-d);font-weight:600;white-space:nowrap;}
   .respbox{position:relative;background:var(--card);border-radius:18px;padding:20px 16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;text-align:center;}
   .rcorner{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;line-height:1;cursor:pointer;z-index:2;}
+  .rhelpbtn{position:absolute;top:10px;left:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-style:italic;font-weight:700;font-family:Georgia,'Times New Roman',serif;font-size:18px;line-height:1;cursor:pointer;z-index:2;}
+  .rhelp{position:absolute;inset:0;background:rgba(0,0,0,.55);display:flex;align-items:center;justify-content:center;padding:18px;border-radius:18px;z-index:5;}
+  .rhelp-card{background:var(--card);border:1px solid var(--line);border-radius:14px;padding:18px;max-width:340px;text-align:left;}
+  .rhelp-title{font-size:17px;font-weight:700;color:var(--ink);margin-bottom:10px;}
+  .rhelp-list{margin:0 0 14px;padding-left:18px;}
+  .rhelp-list li{font-size:13.5px;color:var(--ink);line-height:1.45;margin-bottom:8px;}
+  .rhelp-close{width:100%;background:var(--teal);color:#fff;border:none;border-radius:10px;padding:11px;font-size:14px;cursor:pointer;font-family:inherit;}
   .resptitle .rt-es{font-size:25px;font-weight:700;color:var(--ink);line-height:1.22;}
   .resptitle .rt-en{font-size:15px;color:var(--muted);margin-top:6px;}
   .rospeak{margin:14px auto 2px;background:var(--teal);color:#fff;border:none;border-radius:12px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;}
@@ -223,11 +230,22 @@
 </div></div>
 
 <div id="respOverlay" class="overlay hidden"><div class="respbox">
+  <button class="rhelpbtn hidden" aria-label="How to use the body map">i</button>
   <button class="rcorner" aria-label="Close">✕</button>
   <div class="resptitle"><div class="rt-es"></div><div class="rt-en"></div></div>
   <button class="rospeak">🔊 Ask aloud</button>
   <div class="respgrid" id="respGrid"></div>
   <div class="respsel" id="respSel"></div>
+  <div class="rhelp hidden" id="rHelp"><div class="rhelp-card">
+    <div class="rhelp-title">Using the body map</div>
+    <ul class="rhelp-list">
+      <li>Tap <b>Ask aloud</b> to ask “¿Dónde le duele?”, then have the patient point to themselves.</li>
+      <li>Tap that area on the figure to see its Spanish word, then tap 🔊 to say it back and confirm.</li>
+      <li><b>Front / Back / Joints</b> switch views. <b>R / L</b> are the patient’s own sides.</li>
+      <li>For an arm or leg, tap <b>Side</b> (inner / outer) to add “por dentro / por fuera”.</li>
+    </ul>
+    <button class="rhelp-close">Got it</button>
+  </div></div>
 </div></div>
 
 <script>
@@ -260,14 +278,14 @@ function C(id,cx,cy,r,es,en){return{id:id,shape:'circle',cx:cx,cy:cy,r:r,es:es,e
 function P(id,d,es,en){return{id:id,shape:'path',d:d,es:es,en:en};}
 const BODY_ZONES={
  front:[
-  R('f-thigh-r',86,236,28,74,12,'Muslo derecho','Right thigh'),R('f-leg-r',88,312,24,80,10,'Pantorrilla derecha','Right lower leg'),R('f-foot-r',80,394,30,20,8,'Pie / dedos del pie derecho','Right foot / toes'),
-  R('f-thigh-l',126,236,28,74,12,'Muslo izquierdo','Left thigh'),R('f-leg-l',128,312,24,80,10,'Pantorrilla izquierda','Left lower leg'),R('f-foot-l',130,394,30,20,8,'Pie / dedos del pie izquierdo','Left foot / toes'),
-  R('f-uarm-r',46,96,22,54,11,'Brazo derecho (arriba)','Right upper arm'),R('f-farm-r',44,152,20,52,10,'Antebrazo derecho','Right forearm'),R('f-hand-r',40,206,24,26,10,'Mano / dedos de la mano derecha','Right hand / fingers'),
-  R('f-uarm-l',172,96,22,54,11,'Brazo izquierdo (arriba)','Left upper arm'),R('f-farm-l',176,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('f-hand-l',176,206,24,26,10,'Mano / dedos de la mano izquierda','Left hand / fingers'),
+  R('f-thigh-r',86,236,28,74,12,'Muslo derecho','Right thigh'),R('f-leg-r',88,312,24,80,10,'Espinilla derecha','Right shin'),R('f-foot-r',80,394,30,20,8,'Pie / dedos del pie derecho','Right foot / toes'),
+  R('f-thigh-l',126,236,28,74,12,'Muslo izquierdo','Left thigh'),R('f-leg-l',128,312,24,80,10,'Espinilla izquierda','Left shin'),R('f-foot-l',130,394,30,20,8,'Pie / dedos del pie izquierdo','Left foot / toes'),
+  R('f-uarm-r',46,96,22,54,11,'Brazo derecho','Right upper arm'),R('f-farm-r',44,152,20,52,10,'Antebrazo derecho','Right forearm'),R('f-hand-r',40,206,24,26,10,'Mano / dedos de la mano derecha','Right hand / fingers'),
+  R('f-uarm-l',172,96,22,54,11,'Brazo izquierdo','Left upper arm'),R('f-farm-l',176,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('f-hand-l',176,206,24,26,10,'Mano / dedos de la mano izquierda','Left hand / fingers'),
   P('f-pelvis','M96 212 H144 L130 238 H110 Z','Pelvis / ingle','Pelvis / groin'),
   R('f-ruq',80,152,38,30,6,'Abdomen superior derecho','Upper-right belly'),R('f-luq',122,152,38,30,6,'Abdomen superior izquierdo','Upper-left belly'),
   R('f-rlq',80,184,38,28,6,'Abdomen inferior derecho','Lower-right belly'),R('f-llq',122,184,38,28,6,'Abdomen inferior izquierdo','Lower-left belly'),
-  C('f-cabd',120,182,16,'Centro del abdomen','Central belly'),
+  C('f-cabd',120,182,16,'Boca del estómago','Central belly'),
   R('f-chest-r',72,94,30,56,8,'Pecho derecho','Right chest'),R('f-chest-c',104,94,32,56,6,'Centro del pecho','Center of chest'),R('f-chest-l',138,94,30,56,8,'Pecho izquierdo','Left chest'),
   R('f-neck',106,80,28,14,5,'Cuello / garganta','Neck / throat'),
   R('f-head',96,8,48,18,9,'Cabeza','Head (top)'),R('f-eyes',90,28,60,14,6,'Ojos / oídos','Eyes / ears'),R('f-nose',92,44,56,14,6,'Nariz / mejillas','Nose / cheeks'),R('f-jaw',100,60,40,16,9,'Mandíbula / barbilla','Jaw / chin')
@@ -275,8 +293,8 @@ const BODY_ZONES={
  back:[
   R('b-thigh-l',86,236,28,74,12,'Muslo izquierdo','Left thigh'),R('b-calf-l',88,312,24,80,10,'Pantorrilla izquierda','Left calf'),R('b-heel-l',80,394,30,20,8,'Talón / pie izquierdo','Left heel / foot'),
   R('b-thigh-r',126,236,28,74,12,'Muslo derecho','Right thigh'),R('b-calf-r',128,312,24,80,10,'Pantorrilla derecha','Right calf'),R('b-heel-r',130,394,30,20,8,'Talón / pie derecho','Right heel / foot'),
-  R('b-uarm-l',46,96,22,54,11,'Brazo izquierdo (arriba)','Left upper arm'),R('b-farm-l',44,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('b-hand-l',40,206,24,26,10,'Mano / dedos de la mano izquierda','Left hand / fingers'),
-  R('b-uarm-r',172,96,22,54,11,'Brazo derecho (arriba)','Right upper arm'),R('b-farm-r',176,152,20,52,10,'Antebrazo derecho','Right forearm'),R('b-hand-r',176,206,24,26,10,'Mano / dedos de la mano derecha','Right hand / fingers'),
+  R('b-uarm-l',46,96,22,54,11,'Brazo izquierdo','Left upper arm'),R('b-farm-l',44,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('b-hand-l',40,206,24,26,10,'Mano / dedos de la mano izquierda','Left hand / fingers'),
+  R('b-uarm-r',172,96,22,54,11,'Brazo derecho','Right upper arm'),R('b-farm-r',176,152,20,52,10,'Antebrazo derecho','Right forearm'),R('b-hand-r',176,206,24,26,10,'Mano / dedos de la mano derecha','Right hand / fingers'),
   P('b-glute-l','M82 202 H118 A18 35 0 0 1 82 202 Z','Glúteo izquierdo','Left buttock'),P('b-glute-r','M122 202 H158 A18 35 0 0 1 122 202 Z','Glúteo derecho','Right buttock'),
   R('b-lback-l',82,152,36,46,6,'Espalda baja izquierda','Lower back (left)'),R('b-lback-r',122,152,36,46,6,'Espalda baja derecha','Lower back (right)'),
   R('b-uback-l',76,94,42,56,8,'Espalda alta izquierda','Upper back (left)'),R('b-uback-r',122,94,42,56,8,'Espalda alta derecha','Upper back (right)'),
@@ -469,6 +487,8 @@ function openResp(tool){
   respOverlay.querySelector('.rt-es').textContent=tool.title_es;
   respOverlay.querySelector('.rt-en').textContent=tool.title_en;
   respOverlay.querySelector('.rospeak').onclick=()=>speak(tool.title_es,null);
+  respOverlay.querySelector('.rhelpbtn').classList.toggle('hidden',tool.type!=='body');
+  respOverlay.querySelector('#rHelp').classList.add('hidden');
   const grid=document.getElementById('respGrid');const sel=document.getElementById('respSel');
   grid.innerHTML='';sel.textContent='';
   function pick(b,label){[...grid.children].forEach(c=>c.classList.remove('on'));b.classList.add('on');sel.textContent='Patient chose: '+label;}
@@ -519,6 +539,9 @@ function openResp(tool){
   respOverlay.classList.remove('hidden');
 }
 respOverlay.addEventListener('click',e=>{if(e.target===respOverlay||e.target.closest('.rcorner'))respOverlay.classList.add('hidden');});
+const rInfo=respOverlay.querySelector('.rhelpbtn'),rHelp=respOverlay.querySelector('#rHelp');
+rInfo.addEventListener('click',()=>rHelp.classList.remove('hidden'));
+rHelp.addEventListener('click',e=>{if(e.target===rHelp||e.target.closest('.rhelp-close'))rHelp.classList.add('hidden');});
 function buildConsent(){const s=sectionEl('consent','📋','Consent — risks, benefits & alternatives','#5a6b6d');
   const box=document.createElement('div');box.className='consentbox';
   CONSENT.forEach(c=>{const d=document.createElement('div');d.className='ctype';d.innerHTML='<h3>'+c.type+'</h3>';
