@@ -51,7 +51,8 @@
   .respcard .rinfo-en{font-size:16px;font-weight:600;color:var(--ink);line-height:1.2;}
   .respcard .rinfo-es{font-size:12.5px;color:var(--muted);margin-top:3px;}
   .respcard .rgo{flex:0 0 auto;font-size:13px;color:var(--teal-d);font-weight:600;white-space:nowrap;}
-  .respbox{background:var(--card);border-radius:18px;padding:20px 16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;text-align:center;}
+  .respbox{position:relative;background:var(--card);border-radius:18px;padding:20px 16px;max-width:560px;width:100%;max-height:92vh;overflow:auto;text-align:center;}
+  .rcorner{position:absolute;top:10px;right:12px;width:34px;height:34px;border-radius:50%;border:1px solid var(--line);background:var(--card);color:var(--muted);font-size:15px;line-height:1;cursor:pointer;z-index:2;}
   .resptitle .rt-es{font-size:25px;font-weight:700;color:var(--ink);line-height:1.22;}
   .resptitle .rt-en{font-size:15px;color:var(--muted);margin-top:6px;}
   .rospeak{margin:14px auto 2px;background:var(--teal);color:#fff;border:none;border-radius:12px;padding:10px 18px;font-size:15px;font-weight:600;cursor:pointer;}
@@ -67,7 +68,12 @@
   .respopt.on{background:var(--oc,var(--teal));border-color:var(--oc,var(--teal));}
   .respopt.on .rnum,.respopt.on .ro-es,.respopt.on .ro-en,.respopt.on .rlab{color:#fff;}
   .respsel{min-height:24px;margin-top:16px;font-size:16px;font-weight:700;color:var(--teal-d);}
-  .rclose{margin-top:14px;background:transparent;border:1px solid var(--line);color:var(--muted);border-radius:12px;padding:11px;font-size:14px;cursor:pointer;width:100%;}
+  .bodypick{display:none;align-items:center;justify-content:space-between;gap:12px;margin-top:10px;padding:14px 16px;min-height:60px;border:1px solid var(--teal);border-radius:14px;background:var(--bg);text-align:left;}
+  .bmods{display:none;flex-wrap:wrap;gap:6px;justify-content:center;align-items:center;margin-top:8px;}
+  .bmodlbl{font-size:12px;color:var(--muted);margin-right:2px;}
+  .bmods.show{display:flex;}
+  .bmod{border:1px solid var(--line);background:var(--card);color:var(--ink);border-radius:999px;padding:6px 12px;font-size:12.5px;cursor:pointer;font-family:inherit;}
+  .bmod.on{background:var(--teal);color:#fff;border-color:var(--teal);}
   .respgrid.body{display:block;}
   .bodytoggle{display:inline-flex;border:1px solid var(--line);border-radius:10px;overflow:hidden;margin-bottom:4px;}
   .bodytoggle .bt{padding:7px 16px;font-size:13px;background:var(--card);color:var(--ink);border:none;cursor:pointer;font-family:inherit;}
@@ -81,12 +87,11 @@
   .bjoint.on{fill:#d63031;stroke:#a51f1f;}
   .bodyhint{font-size:12px;color:var(--muted);margin-top:8px;text-align:center;}
   .borient{fill:var(--muted);font-size:14px;font-weight:700;font-family:inherit;}
-  .bodypick{display:none;align-items:center;justify-content:space-between;gap:10px;margin-top:10px;padding:10px 14px;border:1px solid var(--teal);border-radius:12px;background:var(--bg);}
   .bodypick.show{display:flex;}
-  .bp-en{font-size:14px;color:var(--muted);}
-  .bp-eswrap{display:flex;align-items:center;gap:10px;}
-  .bp-es{font-size:21px;font-weight:700;color:var(--ink);}
-  .bp-speak{flex:0 0 auto;background:var(--teal);color:#fff;border:none;border-radius:10px;width:44px;height:44px;font-size:18px;cursor:pointer;}
+  .bp-en{font-size:14px;color:var(--muted);flex:0 0 auto;max-width:38%;}
+  .bp-eswrap{display:flex;align-items:center;gap:10px;flex:1;justify-content:flex-end;}
+  .bp-es{font-size:22px;font-weight:700;color:var(--ink);text-align:right;line-height:1.15;}
+  .bp-speak{flex:0 0 auto;background:var(--teal);color:#fff;border:none;border-radius:10px;width:46px;height:46px;font-size:18px;cursor:pointer;}
   .controls{position:sticky;top:0;z-index:20;background:var(--bg);padding:10px 12px 6px;border-bottom:1px solid var(--line);}
   .crow1{display:flex;gap:8px;align-items:center;}
   .sbox{position:relative;flex:1 1 50%;min-width:0;display:flex;transition:flex-basis .2s ease;}
@@ -218,11 +223,11 @@
 </div></div>
 
 <div id="respOverlay" class="overlay hidden"><div class="respbox">
+  <button class="rcorner" aria-label="Close">✕</button>
   <div class="resptitle"><div class="rt-es"></div><div class="rt-en"></div></div>
   <button class="rospeak">🔊 Ask aloud</button>
   <div class="respgrid" id="respGrid"></div>
   <div class="respsel" id="respSel"></div>
-  <button class="rclose">Close ✕</button>
 </div></div>
 
 <script>
@@ -252,37 +257,39 @@ const RESP=[
 function R(id,x,y,w,h,rx,es,en){return{id:id,shape:'rect',x:x,y:y,w:w,h:h,rx:rx,es:es,en:en};}
 function E(id,cx,cy,rx,ry,es,en){return{id:id,shape:'ellipse',cx:cx,cy:cy,rx:rx,ry:ry,es:es,en:en};}
 function C(id,cx,cy,r,es,en){return{id:id,shape:'circle',cx:cx,cy:cy,r:r,es:es,en:en};}
+function P(id,d,es,en){return{id:id,shape:'path',d:d,es:es,en:en};}
 const BODY_ZONES={
  front:[
-  R('f-thigh-r',86,236,28,74,12,'Muslo derecho','Right thigh'),R('f-leg-r',88,312,24,80,10,'Pantorrilla derecha','Right lower leg'),R('f-foot-r',80,394,30,20,8,'Pie derecho','Right foot'),
-  R('f-thigh-l',126,236,28,74,12,'Muslo izquierdo','Left thigh'),R('f-leg-l',128,312,24,80,10,'Pantorrilla izquierda','Left lower leg'),R('f-foot-l',130,394,30,20,8,'Pie izquierdo','Left foot'),
-  R('f-uarm-r',46,96,22,54,11,'Brazo derecho (arriba)','Right upper arm'),R('f-farm-r',44,152,20,52,10,'Antebrazo derecho','Right forearm'),R('f-hand-r',40,206,24,26,10,'Mano derecha','Right hand'),
-  R('f-uarm-l',172,96,22,54,11,'Brazo izquierdo (arriba)','Left upper arm'),R('f-farm-l',176,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('f-hand-l',176,206,24,26,10,'Mano izquierda','Left hand'),
-  R('f-pelvis',92,214,56,24,10,'Pelvis / ingle','Pelvis / groin'),
+  R('f-thigh-r',86,236,28,74,12,'Muslo derecho','Right thigh'),R('f-leg-r',88,312,24,80,10,'Pantorrilla derecha','Right lower leg'),R('f-foot-r',80,394,30,20,8,'Pie / dedos del pie derecho','Right foot / toes'),
+  R('f-thigh-l',126,236,28,74,12,'Muslo izquierdo','Left thigh'),R('f-leg-l',128,312,24,80,10,'Pantorrilla izquierda','Left lower leg'),R('f-foot-l',130,394,30,20,8,'Pie / dedos del pie izquierdo','Left foot / toes'),
+  R('f-uarm-r',46,96,22,54,11,'Brazo derecho (arriba)','Right upper arm'),R('f-farm-r',44,152,20,52,10,'Antebrazo derecho','Right forearm'),R('f-hand-r',40,206,24,26,10,'Mano / dedos de la mano derecha','Right hand / fingers'),
+  R('f-uarm-l',172,96,22,54,11,'Brazo izquierdo (arriba)','Left upper arm'),R('f-farm-l',176,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('f-hand-l',176,206,24,26,10,'Mano / dedos de la mano izquierda','Left hand / fingers'),
+  P('f-pelvis','M96 212 H144 L130 238 H110 Z','Pelvis / ingle','Pelvis / groin'),
   R('f-ruq',80,152,38,30,6,'Abdomen superior derecho','Upper-right belly'),R('f-luq',122,152,38,30,6,'Abdomen superior izquierdo','Upper-left belly'),
   R('f-rlq',80,184,38,28,6,'Abdomen inferior derecho','Lower-right belly'),R('f-llq',122,184,38,28,6,'Abdomen inferior izquierdo','Lower-left belly'),
+  C('f-cabd',120,182,16,'Centro del abdomen','Central belly'),
   R('f-chest-r',72,94,30,56,8,'Pecho derecho','Right chest'),R('f-chest-c',104,94,32,56,6,'Centro del pecho','Center of chest'),R('f-chest-l',138,94,30,56,8,'Pecho izquierdo','Left chest'),
   R('f-neck',106,80,28,14,5,'Cuello / garganta','Neck / throat'),
-  R('f-head',96,8,48,18,9,'Cabeza','Head (top)'),R('f-eyes',90,28,60,14,6,'Ojos','Eyes'),R('f-nose',92,44,56,14,6,'Nariz y mejillas','Nose & cheeks'),R('f-jaw',100,60,40,16,9,'Mandíbula / barbilla','Jaw / chin')
+  R('f-head',96,8,48,18,9,'Cabeza','Head (top)'),R('f-eyes',90,28,60,14,6,'Ojos / oídos','Eyes / ears'),R('f-nose',92,44,56,14,6,'Nariz / mejillas','Nose / cheeks'),R('f-jaw',100,60,40,16,9,'Mandíbula / barbilla','Jaw / chin')
  ],
  back:[
   R('b-thigh-l',86,236,28,74,12,'Muslo izquierdo','Left thigh'),R('b-calf-l',88,312,24,80,10,'Pantorrilla izquierda','Left calf'),R('b-heel-l',80,394,30,20,8,'Talón / pie izquierdo','Left heel / foot'),
   R('b-thigh-r',126,236,28,74,12,'Muslo derecho','Right thigh'),R('b-calf-r',128,312,24,80,10,'Pantorrilla derecha','Right calf'),R('b-heel-r',130,394,30,20,8,'Talón / pie derecho','Right heel / foot'),
-  R('b-uarm-l',46,96,22,54,11,'Brazo izquierdo (arriba)','Left upper arm'),R('b-farm-l',44,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('b-hand-l',40,206,24,26,10,'Mano izquierda','Left hand'),
-  R('b-uarm-r',172,96,22,54,11,'Brazo derecho (arriba)','Right upper arm'),R('b-farm-r',176,152,20,52,10,'Antebrazo derecho','Right forearm'),R('b-hand-r',176,206,24,26,10,'Mano derecha','Right hand'),
-  R('b-glute-l',86,200,30,36,8,'Glúteo izquierdo','Left buttock'),R('b-glute-r',124,200,30,36,8,'Glúteo derecho','Right buttock'),
+  R('b-uarm-l',46,96,22,54,11,'Brazo izquierdo (arriba)','Left upper arm'),R('b-farm-l',44,152,20,52,10,'Antebrazo izquierdo','Left forearm'),R('b-hand-l',40,206,24,26,10,'Mano / dedos de la mano izquierda','Left hand / fingers'),
+  R('b-uarm-r',172,96,22,54,11,'Brazo derecho (arriba)','Right upper arm'),R('b-farm-r',176,152,20,52,10,'Antebrazo derecho','Right forearm'),R('b-hand-r',176,206,24,26,10,'Mano / dedos de la mano derecha','Right hand / fingers'),
+  P('b-glute-l','M82 202 H118 A18 35 0 0 1 82 202 Z','Glúteo izquierdo','Left buttock'),P('b-glute-r','M122 202 H158 A18 35 0 0 1 122 202 Z','Glúteo derecho','Right buttock'),
   R('b-lback-l',82,152,36,46,6,'Espalda baja izquierda','Lower back (left)'),R('b-lback-r',122,152,36,46,6,'Espalda baja derecha','Lower back (right)'),
   R('b-uback-l',76,94,42,56,8,'Espalda alta izquierda','Upper back (left)'),R('b-uback-r',122,94,42,56,8,'Espalda alta derecha','Upper back (right)'),
   R('b-neck',106,80,28,14,5,'Cuello (nuca)','Neck (back)'),E('b-head',120,42,30,34,'Nuca / cabeza','Back of head')
  ],
  joints:[
-  C('j-jaw',120,68,10,'Mandíbula (ATM)','Jaw (TMJ)'),C('j-neck',120,86,9,'Cuello','Neck'),
+  C('j-neck',120,86,9,'Cuello','Neck'),
   C('j-shoulder-r',74,98,12,'Hombro derecho','Right shoulder'),C('j-shoulder-l',166,98,12,'Hombro izquierdo','Left shoulder'),
   C('j-elbow-r',54,150,10,'Codo derecho','Right elbow'),C('j-elbow-l',186,150,10,'Codo izquierdo','Left elbow'),
-  C('j-wrist-r',50,202,9,'Muñeca derecha','Right wrist'),C('j-wrist-l',190,202,9,'Muñeca izquierda','Left wrist'),
+  C('j-wrist-r',50,202,9,'Muñeca / mano / dedos de la mano derecha','Right wrist / hand / fingers'),C('j-wrist-l',190,202,9,'Muñeca / mano / dedos de la mano izquierda','Left wrist / hand / fingers'),
   C('j-hip-r',102,228,11,'Cadera derecha','Right hip'),C('j-hip-l',138,228,11,'Cadera izquierda','Left hip'),
   C('j-knee-r',100,312,11,'Rodilla derecha','Right knee'),C('j-knee-l',140,312,11,'Rodilla izquierda','Left knee'),
-  C('j-ankle-r',98,392,9,'Tobillo derecho','Right ankle'),C('j-ankle-l',142,392,9,'Tobillo izquierdo','Left ankle')
+  C('j-ankle-r',98,392,9,'Tobillo / pie / dedos del pie derecho','Right ankle / foot / toes'),C('j-ankle-l',142,392,9,'Tobillo / pie / dedos del pie izquierdo','Left ankle / foot / toes')
  ]
 };
 const BODY_SIL=[E('s-head',120,42,28,32),R('s-neck',108,72,24,14,5),R('s-torso',76,86,88,132,18),R('s-uarm-r',48,92,22,118,11),R('s-uarm-l',170,92,22,118,11),R('s-leg-r',84,222,28,196,13),R('s-leg-l',128,222,28,196,13)];
@@ -290,6 +297,7 @@ const BODY_LABELS={};['front','back','joints'].forEach(function(m){BODY_ZONES[m]
 function shapeSvg(z,cls){
   if(z.shape==='ellipse')return '<ellipse class="'+cls+'" data-region="'+z.id+'" cx="'+z.cx+'" cy="'+z.cy+'" rx="'+z.rx+'" ry="'+z.ry+'"/>';
   if(z.shape==='circle')return '<circle class="'+cls+'" data-region="'+z.id+'" cx="'+z.cx+'" cy="'+z.cy+'" r="'+z.r+'"/>';
+  if(z.shape==='path')return '<path class="'+cls+'" data-region="'+z.id+'" d="'+z.d+'"/>';
   return '<rect class="'+cls+'" data-region="'+z.id+'" x="'+z.x+'" y="'+z.y+'" width="'+z.w+'" height="'+z.h+'" rx="'+z.rx+'"/>';
 }
 function buildBodySvg(mode){
@@ -475,12 +483,26 @@ function openResp(tool){
     grid.innerHTML='<div class="bodytoggle"><button class="bt on" data-mode="front">Front</button><button class="bt" data-mode="back">Back</button><button class="bt" data-mode="joints">Joints</button></div>'+
       '<div id="bodyWrap"></div>'+
       '<div class="bodyhint">Tap an area to see &amp; say it · R/L = patient\u2019s side</div>'+
-      '<div class="bodypick" id="bodyPick"><span class="bp-en" id="bpEn"></span><span class="bp-eswrap"><span class="bp-es" id="bpEs"></span><button class="bp-speak" id="bpSpeak" aria-label="Say it">🔊</button></span></div>';
+      '<div class="bodypick" id="bodyPick"><span class="bp-en" id="bpEn"></span><span class="bp-eswrap"><span class="bp-es" id="bpEs"></span><button class="bp-speak" id="bpSpeak" aria-label="Say it">🔊</button></span></div>'+
+      '<div class="bmods" id="bMods"></div>';
     sel.textContent='';
-    const pick=grid.querySelector('#bodyPick');
-    function choose(id){const l=BODY_LABELS[id];grid.querySelector('#bpEn').textContent=l.en;grid.querySelector('#bpEs').textContent=l.es;
-      grid.querySelector('#bpSpeak').onclick=()=>speak(l.es,null);pick.classList.add('show');}
-    function renderMode(mode){const wrap=grid.querySelector('#bodyWrap');wrap.innerHTML=buildBodySvg(mode);pick.classList.remove('show');
+    const pick=grid.querySelector('#bodyPick'),modsBox=grid.querySelector('#bMods');
+    const MODS=[{es:'por dentro',en:'inner'},{es:'por fuera',en:'outer'}];
+    const canMod=id=>/arm|leg|thigh|calf|hand|foot|knee|elbow|wrist|ankle|shoulder|hip/.test(id);
+    let baseEs='',baseEn='',curMod=null;
+    const clean=s=>s.replace(/\s*\/\s*/g,', ');
+    function refresh(){grid.querySelector('#bpEn').textContent=baseEn+(curMod?' ('+curMod.en+')':'');
+      grid.querySelector('#bpEs').textContent=baseEs+(curMod?' · '+curMod.es:'');
+      const say=clean(baseEs)+(curMod?', '+curMod.es:'');
+      grid.querySelector('#bpSpeak').onclick=()=>speak(say,null);}
+    modsBox.innerHTML='<span class="bmodlbl">Side · lado:</span>';
+    MODS.forEach(m=>{const b=document.createElement('button');b.className='bmod';b.textContent=m.en+' · '+m.es;
+      b.onclick=()=>{if(curMod===m){curMod=null;b.classList.remove('on');}else{curMod=m;[...modsBox.querySelectorAll('.bmod')].forEach(c=>c.classList.remove('on'));b.classList.add('on');}refresh();};modsBox.appendChild(b);});
+    function choose(id){const l=BODY_LABELS[id];baseEs=l.es;baseEn=l.en;curMod=null;
+      [...modsBox.querySelectorAll('.bmod')].forEach(c=>c.classList.remove('on'));
+      pick.classList.add('show');modsBox.classList.toggle('show',canMod(id));refresh();}
+    function renderMode(mode){const wrap=grid.querySelector('#bodyWrap');wrap.innerHTML=buildBodySvg(mode);
+      pick.classList.remove('show');modsBox.classList.remove('show');
       wrap.querySelectorAll('.bzone').forEach(z=>z.addEventListener('click',()=>{
         wrap.querySelectorAll('.bzone').forEach(x=>x.classList.remove('on'));z.classList.add('on');choose(z.dataset.region);}));}
     grid.querySelectorAll('.bt').forEach(btn=>btn.addEventListener('click',()=>{
@@ -496,7 +518,7 @@ function openResp(tool){
   }
   respOverlay.classList.remove('hidden');
 }
-respOverlay.addEventListener('click',e=>{if(e.target===respOverlay||e.target.closest('.rclose'))respOverlay.classList.add('hidden');});
+respOverlay.addEventListener('click',e=>{if(e.target===respOverlay||e.target.closest('.rcorner'))respOverlay.classList.add('hidden');});
 function buildConsent(){const s=sectionEl('consent','📋','Consent — risks, benefits & alternatives','#5a6b6d');
   const box=document.createElement('div');box.className='consentbox';
   CONSENT.forEach(c=>{const d=document.createElement('div');d.className='ctype';d.innerHTML='<h3>'+c.type+'</h3>';
